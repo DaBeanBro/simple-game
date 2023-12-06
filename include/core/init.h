@@ -9,7 +9,7 @@
 extern const uint16_t SCREEN_WIDTH;
 extern const uint16_t SCREEN_HEIGHT;
 
-
-bool game_init(SDL_Window** window, SDL_Renderer** renderer);
+bool game_create_window(SDL_Window** window);
+bool game_create_renderer(SDL_Window** window, SDL_Renderer** renderer);
 
 #endif // INIT_H

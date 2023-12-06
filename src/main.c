@@ -10,7 +10,7 @@
 // Macros
 #define ENABLE_FPS_LOGGING 0  // Option to enable fps logging
 #define ENABLE_FPS_LIMIT 1 // Option for toggling 60fps
-                              
+
 // Variables for FPS calculation
 static u32 frameCount = 0;
 static u32 lastTime = 0;
@@ -34,7 +34,7 @@ void updateFPS() {
         #endif
     }
 }
-                                      
+
 // Main function
 int main(int argc, char* args[]) {
     SDL_Window* window = NULL;
@@ -58,16 +58,22 @@ int main(int argc, char* args[]) {
 
         return 1;
     }
-
     // --- Initialize game ---
-    if (!game_init(&window, &renderer)) {
-        SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "\n\n! ----------- Failed to initialise Game -----------\n"); 
+    if (!game_create_window(&window)) {
+        SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "\n\n! ----------- Failed to initialise Game Window -----------\n"); 
         SDL_Quit();
         SDL_LogDebug(SDL_LOG_CATEGORY_SYSTEM, "terminated::SDL... ok\n");
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Exiting...\n");
 
         return 2;
-    } 
+    } else if (!game_create_renderer(&window, &renderer)) {
+        SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "\n\n! ----------- Failed to initialise Game Renderer -----------\n"); 
+        SDL_Quit();
+        SDL_LogDebug(SDL_LOG_CATEGORY_SYSTEM, "terminated::SDL... ok\n");
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Exiting...\n");
+
+        return 3;
+    }
 
     // Setup
     u32 frameStart;
