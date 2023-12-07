@@ -1,4 +1,5 @@
 // main.c
+#include <SDL2/SDL_keycode.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
@@ -6,6 +7,7 @@
 // Project defined headers
 #include "../include/core/types.h"
 #include "../include/core/init.h"
+#include "../include/core/console.h"
 
 // Macros
 #define ENABLE_FPS_LOGGING 0  // Option to enable fps logging
@@ -75,37 +77,76 @@ int main(int argc, char* args[]) {
         return 3;
     }
 
-    // Setup
+    // Setup for fps
     u32 frameStart;
     i32 frameTime;
+
+    // Console setup 
+    SDL_Surface* consoleSurface = SDL_CreateRGBSurface(0, 480, 200, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
+    SDL_Texture* consoleTexture = console_texture_create(&window, &renderer, &consoleSurface);
+    SDL_Rect consoleRect;
+    consoleRect.x = 0;
+    consoleRect.y = 280;
+    consoleRect.w = 640;
+    consoleRect.h = 200;
+    bool isSurfaceUpdated = true;
+
+    // Events setup
+    bool consoleVisible = true;
     bool running = true;
     SDL_Event e;
 
     // Main game loop
-    while (running) {
+    while(running) {
     frameStart = SDL_GetTicks();
         // Main event loop
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
+        while(SDL_PollEvent(&e) != 0) {
+            if(e.type == SDL_QUIT) {
                 running = false;
             }
             // Additional event handling here
+            // Example: Update the console surface on a specific event
+            if(e.key.keysym.sym == SDLK_w) {
+              isSurfaceUpdated = true;
+              consoleVisible = true;
+            }
+            if(e.key.keysym.sym == SDLK_e) {
+              consoleVisible = false;
+            }
+            if(e.key.keysym.sym == SDLK_q) {
+              running = false;
+            }
         }
 
         // --- Game rendering ---
         // Clear the renderer
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+         
+        if(isSurfaceUpdated) {
+           // Fill console surface
+          u32 consoleSurfaceColour = SDL_MapRGBA(consoleSurface->format, 60, 50, 40, 255);
+          SDL_FillRect(consoleSurface, NULL, consoleSurfaceColour);
 
-        // Set the draw color
-        SDL_SetRenderDrawColor(renderer, 210, 230, 40, 255);
+          SDL_DestroyTexture(consoleTexture);
+          consoleTexture = console_texture_create(&window, &renderer, &consoleSurface);
+          if(!consoleTexture) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "update::CONSOLE_TEXTURE... FAILED | SDL::ERR -> %s\n", SDL_GetError());
+            running = false;
+          } else {
+            SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "update::CONSOLE_TEXTURE... RECREATED\n");
+          }
+          isSurfaceUpdated = false;
+        } 
 
-        // Draw a rectangle
-        SDL_Rect myRect = { 320, 240, 100, 100 };
-        
+        if(consoleVisible && consoleTexture) {
+          // Draw the texture
+          SDL_RenderCopy(renderer, consoleTexture, NULL, &consoleRect);
+        }
+
         // --- Rendering logic ---
-        SDL_RenderFillRect(renderer, &myRect);
         SDL_RenderPresent(renderer);
+
 
         // Update FPS
          #if ENABLE_FPS_LIMIT
@@ -123,7 +164,11 @@ int main(int argc, char* args[]) {
     SDL_DestroyWindow(window);
     SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO, "destroying::WINDOW... ok\n");
     SDL_FreeSurface(screenSurface);
-    SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "destroying::SURFACE... ok\n");
+    SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "destroying::SURFACE... ok\n");;
+    SDL_FreeSurface(consoleSurface);
+    SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "destroying::CONSOLE_SURFACE... ok\n");;
+    SDL_DestroyTexture(consoleTexture);
+    SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "destroying::CONSOLE_TEXTURE... ok\n");;
     SDL_Quit();
     SDL_LogDebug(SDL_LOG_CATEGORY_SYSTEM, "terminated::SDL... ok\n");
 
